@@ -4,11 +4,31 @@
     ViewBag.Title = "Contacts";
 }
 
+<!-- Display Error or Success Messages after the form is submitted -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
 <h2>Contact Manager</h2>
 
+
 <form enctype="multipart/form-data" action="@Url.Action("UploadCSV", "Contact")" method="post">
-    <input type="file" name="file" accept=".csv" class="form-control mb-3" />
-    <input type="submit" value="Upload CSV" class="btn btn-primary" style="margin-bottom: 30px;" />
+    <div class="form-group">
+        <input type="file" name="file" accept=".csv" id="fileInput" style="display:none;" />
+        <label for="fileInput" class="btn btn-light mb-3";" style="margin-top: 10px;">Upload CSV</label>
+        <span id="fileName" class="ml-3"></span> <!-- Element to display the file name -->
+    <input type="submit" value="Submit" class="btn btn-primary mb-3" style="margin-top: 10px;" />
+</div>
 </form>
 
 <div class="sort-section mb-4 d-flex align-items-center px-3">
@@ -27,7 +47,7 @@
         <option value="desc">Descending</option>
     </select>
 
-    <button onclick="applySort()" class="btn btn-info mb-3" style="margin-left: 10px;">Sort</button>
+    <button onclick="applySort()" class="btn btn-primary mb-3" style="margin-left: 10px;">Sort</button>
 </div>
 
 <table id="contactsTable" class="table table-striped table-bordered">
@@ -74,15 +94,22 @@
 <script src="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css"></script>
 <script>
 
-    $(document).ready(function () {
-        var table = $('#contactsTable').DataTable({
-            "order": [], // Disable initial sorting
-            "columnDefs": [{
-                "targets": "_all",
-                "orderable": false // Disable default sorting
+    // JavaScript to display the file name when a file is selected
+    document.getElementById('fileInput').addEventListener('change', function () {
+        var fileName = this.files.length > 0 ? this.files[0].name : '';
+        document.getElementById('fileName').textContent = fileName;
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var table = new DataTable('#contactsTable', {
+            order: [], // Disable initial sorting
+            columnDefs: [{
+                targets: '_all',
+                orderable: false // Disable default sorting
             }]
         });
     });
+
 
     let sortDirection = [true, true, true, true, true]; // Tracks sorting direction (true = ascending, false = descending)
 
@@ -161,32 +188,7 @@
     }
 
     // Save edited contact
-    @*$(".save").click(function () {
-        var row = $(this).closest('tr');
-        var id = $(this).data("id");
-        var name = row.find("td:nth-child(1)").text();
-        var dob = row.find("td:nth-child(2)").text();
-        var married = row.find("td:nth-child(3)").text() === "True";
-        var phone = row.find("td:nth-child(4)").text();
-        console.log(phone);
-        var salary = parseFloat(row.find("td:nth-child(5)").text());
 
-        $.ajax({
-            url: '@Url.Action("UpdateContact", "Contact")',
-            method: 'POST',
-            data: {
-                Id: id,
-                Name: name,
-                DateOfBirth: dob,
-                Married: married,
-                Phone: phone,
-                Salary: salary
-            },
-            success: function () {
-                alert("Contact updated successfully!");
-            }
-        });
-    });*@
     document.querySelectorAll(".save").forEach(function(button) {
         button.addEventListener("click", function() {
             var row = button.closest('tr');
@@ -215,18 +217,6 @@
 
 
     // Delete contact
-    @*$(".delete").click(function () {
-        var id = $(this).data("id");
-        $.ajax({
-            url: '@Url.Action("DeleteContact", "Contact")',
-            method: 'POST',
-            data: { id: id },
-            success: function () {
-                alert("Contact deleted successfully!");
-                location.reload();
-            }
-        });
-    });*@
 
     document.querySelectorAll(".delete").forEach(function(button) {
         button.addEventListener("click", function() {

@@ -40,42 +40,59 @@ public class ContactController : Controller
     [HttpPost]
     public ActionResult UploadCSV(HttpPostedFileBase file)
     {
-        if (file != null && file.ContentType == "text/csv")
+        if (file == null || file.ContentLength == 0)
         {
-            using (var reader = new StreamReader(file.InputStream))
-            {
-                var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
-                {
-                    Delimiter = ";",  // Use semicolon as the delimiter
-                    HeaderValidated = null,  // Disable header validation
-                    MissingFieldFound = null  // Ignore missing fields
-                };
-
-                var csv = new CsvReader(reader, csvConfig);
-                csv.Context.RegisterClassMap<ContactMap>();  // Register the custom ClassMap
-
-                // Read the records and automatically convert "Yes"/"No" to true/false
-                var records = csv.GetRecords<Contact>()
-                    .Select(record =>
-                    {
-                        record.Id = 0;  // Ignore Id, let the database auto-generate it
-                        return record;
-                    })
-                    .ToList();
-
-                foreach (var record in records)
-                {
-                    db.Contacts.Add(record);  // Add each record to the database
-                }
-
-                db.SaveChanges();  // Save changes to the database
-            }
-
+            TempData["ErrorMessage"] = "Please select a file to upload.";  // Error message if no file is selected
             return RedirectToAction("Index");  // Redirect back to the Index view
         }
 
-        return View();  // Return to the view if no file was uploaded
+        if (file.ContentType == "text/csv")
+        {
+            try
+            {
+                using (var reader = new StreamReader(file.InputStream))
+                {
+                    var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture)
+                    {
+                        Delimiter = ";",  // Use semicolon as the delimiter
+                        HeaderValidated = null,  // Disable header validation
+                        MissingFieldFound = null  // Ignore missing fields
+                    };
+
+                    var csv = new CsvReader(reader, csvConfig);
+                    csv.Context.RegisterClassMap<ContactMap>();  // Register the custom ClassMap
+
+                    var records = csv.GetRecords<Contact>()
+                        .Select(record =>
+                        {
+                            record.Id = 0;  // Ignore Id, let the database auto-generate it
+                            return record;
+                        })
+                        .ToList();
+
+                    foreach (var record in records)
+                    {
+                        db.Contacts.Add(record);  // Add each record to the database
+                    }
+
+                    db.SaveChanges();  // Save changes to the database
+                }
+
+                TempData["SuccessMessage"] = "CSV file uploaded successfully.";  // Success message
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "An error occurred while uploading the file. Please try again.";  // Error message for exceptions
+            }
+        }
+        else
+        {
+            TempData["ErrorMessage"] = "Please upload a valid CSV file.";  // Error message if file type is wrong
+        }
+
+        return RedirectToAction("Index");  // Redirect back to the Index view
     }
+
 
 
 
